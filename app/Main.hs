@@ -2,7 +2,7 @@
 
 module Main where
 
-import Prelude (Bool (..), IO, error, otherwise, putStrLn, &&, ||)
+import Prelude (Bool (..), IO, error, otherwise, putStrLn, (&&), (||))
 
 -- ----------------------------------
 -- Tipos de dados
@@ -37,14 +37,14 @@ _ ^ O = S O
 n ^ S m = (n ^ m) * n
 
 (<) :: Nat -> Nat -> Bool
-O < (S m) = True
-(S n) < O = False
 (S n) < (S m) = n < m
+O < (S _) = True
+_ < _ = False
 
 (>) :: Nat -> Nat -> Bool
-(S n) > O = True
-O > (S m) = False
 (S n) > (S m) = n > m
+(S _) > O = True
+_ > _ = False
 
 sub :: Nat -> Nat -> Nat
 sub O _ = O
@@ -135,7 +135,7 @@ pwMult _ _ = Nil
 
 pw :: (Nat -> Nat -> Nat) -> List Nat -> List Nat -> List Nat
 pw op (Cons n ns) (Cons m ms) = Cons (op n m) (pw op ns ms)
-pw op _ _ = Nil
+pw _ _ _ = Nil
 
 -- allEven, anyEven e allOdd, anyOdd
 allEven :: List Nat -> Bool
@@ -160,6 +160,7 @@ allZero Nil = True
 
 anyZero :: List Nat -> Bool
 anyZero (Cons n ns) = eq n O || anyZero ns
+anyZero Nil = False
 
 -- operações em listas
 addNat :: Nat -> List Nat -> List Nat
@@ -186,7 +187,7 @@ enumTo n = enumFromTo O n
 -- ordenação
 isSorted :: List Nat -> Bool
 isSorted Nil = True
-isSorted (Cons n Nil) = True
+isSorted (Cons _ Nil) = True
 isSorted (Cons n (Cons n' ns)) = leq n n' && isSorted (Cons n' ns)
 
 -- filters
@@ -204,14 +205,14 @@ filterOdd (Cons n ns)
 
 -- minimo e maximo
 minimum :: List Nat -> Nat
-minimum Nil = error
+minimum Nil = error "Empty list: no minimum value"
 minimum (Cons n Nil) = n
 minimum (Cons n (Cons n' ns))
   | n < n' = minimum (Cons n ns)
   | otherwise = minimum (Cons n' ns)
 
 maximum :: List Nat -> Nat
-maximum Nil = error
+maximum Nil = error "Empty list: no maximum value"
 maximum (Cons n Nil) = n
 maximum (Cons n (Cons n' ns))
   | n > n' = maximum (Cons n ns)
@@ -220,7 +221,7 @@ maximum (Cons n (Cons n' ns))
 -- verifica se uma lista é prefixo de outra
 isPrefixOf :: List Nat -> List Nat -> Bool
 isPrefixOf Nil _ = True
-isPrefixOf (Cons n ns) Nil = False
+isPrefixOf (Cons _ _) Nil = False
 isPrefixOf (Cons n ns) (Cons m ms) = eq n m && isPrefixOf ns ms
 
 -- ----------------------------------
@@ -245,56 +246,56 @@ length Nil = O
 index :: Nat -> List a -> a
 index O (Cons x _) = x
 index (S n) (Cons _ xs) = index n xs
-index _ Nil = error "Fora de alcance"
+index _ Nil = error "Out of range"
 
 -- inicio e fim de uma lista
 head :: List a -> a
 head = index O
 
 last :: List a -> a
-last Nil = error "Não há último elemento"
+last Nil = error "Empty List: no last element"
 last (Cons x Nil) = x
 last (Cons _ xs) = last xs
 
 -- elementos de uma lista menos o final/inicial de uma lista
 init :: List a -> List a
-init Nil = error "Lista vazia"
+init Nil = error "Empty List"
 init (Cons _ Nil) = Nil
 init (Cons x xs) = Cons x (init xs)
 
 tail :: List a -> List a
-tail Nil = error "Lista vazia"
+tail Nil = error "Empty List"
 tail (Cons _ xs) = xs
 
 -- take e drop
 take :: Nat -> List a -> List a
 take O _ = Nil
-take (S n) Nil = Nil
+take (S _) Nil = Nil
 take (S n) (Cons x xs) = Cons x (take n xs)
 
 drop :: Nat -> List a -> List a
 drop O xs = xs
-drop (S n) Nil = Nil
-drop (S n) (Cons x xs) = drop n xs
+drop (S _) Nil = Nil
+drop (S n) (Cons _ xs) = drop n xs
 
---
 -- elemIndices :: a -> List a -> List Nat
--- elemIndices a Nil = Nil
+-- elemIndices _ Nil = Nil
 -- elemIndices a (Cons x xs)
 --  | eq a x = Cons
 
 -- all e any
 all :: (a -> Bool) -> List a -> Bool
 all f (Cons x xs) = f x && all f xs
-all f Nil = True
+all _ Nil = True
 
 any :: (a -> Bool) -> List a -> Bool
 any f (Cons x xs) = f x || any f xs
-any f Nil = False
+any _ Nil = False
 
-fold :: (a -> b -> b) -> b -> List a -> b
+-- A fold recebe uma função, um valor base e uma lista. Após isso, aplica a função nos elementos da lista e no valor base
+fold :: (a -> a -> a) -> a -> List a -> a
 fold f e (Cons x xs) = f x (fold f e xs)
-fold f e Nil = e
+fold _ e Nil = e
 
 -- mistura duas listas entre si
 mix :: List a -> List a -> List a
@@ -304,13 +305,40 @@ mix (Cons x xs) (Cons y ys) = Cons x (Cons y (mix xs ys))
 
 -- adiciona um elemento entre os elementos de uma lista
 intersperse :: a -> List a -> List a
-intersperse a Nil = Nil
-intersperse a (Cons x Nil) = Cons x Nil
+intersperse _ Nil = Nil
+intersperse _ (Cons x Nil) = Cons x Nil
 intersperse a (Cons x xs) = Cons x (Cons a (intersperse a xs))
 
 replicate :: Nat -> a -> List a
 replicate O _ = Nil
 replicate (S n) a = Cons a (replicate n a)
+
+-- ----------------------------------
+-- Funções safe
+-- ----------------------------------
+safeHead :: List a -> Maybe a
+safeHead Nil = Nothing
+safeHead (Cons x _) = Just x
+
+safeLast :: List a -> Maybe a
+safeLast Nil = Nothing
+safeLast (Cons x Nil) = Just x
+safeLast (Cons _ xs) = safeLast xs
+
+-- safeInit :: List a -> Maybe (List a)
+-- safeInit Nil = Nothing
+-- safeInit (Cons x xs) = Just (Cons x (safeInit xs))
+
+safeTail :: List a -> Maybe (List a)
+safeTail Nil = Nothing
+safeTail (Cons _ Nil) = Nothing
+safeTail (Cons _ xs) = Just xs
+
+-- findFirst e find
+-- findFirst :: a -> List a -> Maybe a
+-- findFirst x Nil = Nothing
+-- findFirst x (Cons y _)
+--   | eq x y =
 
 main :: IO ()
 main = putStrLn "Hello, world!"
