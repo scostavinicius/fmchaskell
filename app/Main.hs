@@ -325,9 +325,9 @@ safeLast Nil = Nothing
 safeLast (Cons x Nil) = Just x
 safeLast (Cons _ xs) = safeLast xs
 
--- safeInit :: List a -> Maybe (List a)
--- safeInit Nil = Nothing
--- safeInit (Cons x xs) = Just (Cons x (safeInit xs))
+safeInit :: List a -> Maybe (List a)
+safeInit Nil = Nothing
+safeInit xs = Just (init xs)
 
 safeTail :: List a -> Maybe (List a)
 safeTail Nil = Nothing
@@ -339,6 +339,14 @@ safeTail (Cons _ xs) = Just xs
 -- findFirst x Nil = Nothing
 -- findFirst x (Cons y _)
 --   | eq x y =
+
+-- safePick e safeFindFirst
+safePick :: Nat -> List a -> Maybe a
+safePick _ Nil = Nothing
+safePick O (Cons x _) = Just x
+safePick (S n) (Cons _ xs) = safePick n xs
+
+-- safeFindFirst
 
 main :: IO ()
 main = putStrLn "Hello, world!"
